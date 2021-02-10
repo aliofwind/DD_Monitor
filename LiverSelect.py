@@ -1,7 +1,7 @@
-'''
+"""
 DD监控室主界面上方的控制条里的ScrollArea里面的卡片模块
 包含主播开播/下播检测和刷新展示 置顶排序 录制管理等功能
-'''
+"""
 import requests, json, time, codecs, logging, os
 from PyQt5.QtWidgets import * 	# QAction,QFileDialog
 from PyQt5.QtGui import *		# QIcon,QPixmap
@@ -63,6 +63,7 @@ class OutlinedLabel(QLabel):
 
 
 class CircleImage(QWidget):
+    """圆形头像框"""
     def __init__(self, parent=None):
         super(CircleImage, self).__init__(parent)
         self.setFixedSize(60, 60)
@@ -107,6 +108,9 @@ class PushButton(QPushButton):
 
 
 class RecordThread(QThread):
+    """获取直播推流并录制
+    TODO: 换用 bilibili_api.live.get_room_play_url(room_id)
+    """
     downloadTimer = pyqtSignal(str)
     downloadError = pyqtSignal(str)
 
@@ -156,6 +160,7 @@ class RecordThread(QThread):
 
 
 class DownloadImage(QThread):
+    """下载图片"""
     img = pyqtSignal(QPixmap)
     img_origin = pyqtSignal(QPixmap)
 
@@ -180,6 +185,7 @@ class DownloadImage(QThread):
 
 
 class CoverLabel(QLabel):
+    """封面的文字"""
     addToWindow = pyqtSignal(list)
     deleteCover = pyqtSignal(str)
     changeTopToken = pyqtSignal(list)
@@ -397,6 +403,7 @@ class CoverLabel(QLabel):
 
 
 class GetHotLiver(QThread):
+    """获取指定分区的 热榜"""
     roomInfoSummary = pyqtSignal(list)
 
     def __init__(self):
@@ -423,6 +430,11 @@ class GetHotLiver(QThread):
 
 
 class GetFollows(QThread):
+    """获取指定用户的关注列表
+    TODO: 换用
+        + 获取关注列表：bilibili_api.user.get_followings_g(uid)
+        + 获取直播间地址：bilibili_api.user.get_live_info(uid)
+    """
     roomInfoSummary = pyqtSignal(list)
 
     def __init__(self):
@@ -459,6 +471,7 @@ class GetFollows(QThread):
 
 
 class DownloadVTBList(QThread):
+    """更新 VTB 信息"""
     vtbList = pyqtSignal(list)
 
     def __init__(self, parent=None):
@@ -485,6 +498,7 @@ class DownloadVTBList(QThread):
 
 
 class HotLiverTable(QTableWidget):
+    """关注列表"""
     addToWindow = pyqtSignal(list)
 
     def __init__(self):
@@ -505,6 +519,7 @@ class HotLiverTable(QTableWidget):
 
 
 class AddLiverRoomWidget(QWidget):
+    """添加直播间 - 独立弹窗"""
     roomList = pyqtSignal(dict)
 
     def __init__(self,application_path):
@@ -809,6 +824,16 @@ class AddLiverRoomWidget(QWidget):
 
 
 class CollectLiverInfo(QThread):
+    """批量获取直播间信息
+    + 直播状态 'live_status'
+    + 标题 'title'
+    + 封面 'cover'
+    + 关键帧 'keyframe'
+    + 头像 'face'
+
+    TODO:
+    + bilibili_api.live.get_room_info(room_id)
+    """
     liverInfo = pyqtSignal(list)
 
     def __init__(self, roomIDList):
@@ -864,12 +889,13 @@ class CollectLiverInfo(QThread):
                             print(str(e))
                 if liverInfo:
                     self.liverInfo.emit(liverInfo)
-                time.sleep(20)  # 冷却时间
+                time.sleep(60)  # 冷却时间
             except Exception as e:
                 logging.error(str(e))
 
 
 class LiverPanel(QWidget):
+    """关注的直播间"""
     addToWindow = pyqtSignal(list)
     dumpConfig = pyqtSignal()
     refreshIDList = pyqtSignal(list)
@@ -974,16 +1000,16 @@ class LiverPanel(QWidget):
                 for cover in self.coverList:
                     if cover.roomID == info[1]:
                         cover.updateLabel(info)
-        if roomIDToRefresh:
-            self.refreshIDList.emit(roomIDToRefresh)
-            self.refreshPanel()  # 修改刷新策略 只有当有主播直播状态发生变化后才会刷新 降低闪退风险
         if roomIDStartLive:
             self.startLiveList.emit(roomIDStartLive)  # 发送开播列表
-        elif firstRefresh:
-            self.refreshPanel()
-        elif not self.refreshCount % 3:  # 每20s x 3 = 1分钟强制刷新一次
-            self.refreshPanel()
-        # self.refreshPanel()
+        # if roomIDToRefresh:
+        #     self.refreshIDList.emit(roomIDToRefresh)
+        #     self.refreshPanel()  # 修改刷新策略 只有当有主播直播状态发生变化后才会刷新 降低闪退风险
+        # elif firstRefresh:
+        #     self.refreshPanel()
+        # elif not self.refreshCount % 3:  # 每20s x 3 = 1分钟强制刷新一次
+        #     self.refreshPanel()
+        self.refreshPanel()
 
     def addCoverToPlayer(self, info):
         self.addToWindow.emit(info)
