@@ -1122,7 +1122,7 @@ if __name__ == '__main__':
     os.mkdir(cacheFolder)
 
     # 应用qss
-    QApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
+    # QApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
     app = QApplication(sys.argv)
     with open(os.path.join(application_path, 'utils/qdark.qss'), 'r') as f:
         qss = f.read()
